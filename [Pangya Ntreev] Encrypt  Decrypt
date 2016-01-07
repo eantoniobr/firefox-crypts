@@ -1,6 +1,6 @@
 
 decrypt.c
-[code]#include "decrypt.h"
+#include "decrypt.h"
 
 short int SetByteInfoDecrypt = 0;
 
@@ -180,12 +180,12 @@ printf("*********************************\n");
 else if(RECV_DEBUG_MODE_TYPE() == 2)
 AddStringToListBoxDebug("*********************************");
 */
-}[/CODE]
+}
 
 encrypt.c
 
 
-[code]#include "encrypt.h"
+#include "encrypt.h"
 #include "decrypt.h"
 
 unsigned int packet_key0_add = 0;
@@ -322,7 +322,7 @@ buffer[size-3] = packet_key1_add;
 packet_key1_add++;
 }
 
-packet_key0_add++;[/CODE]
+packet_key0_add++;
 
 EncryptPacket -> Usado do servidor para o cliente.
 ClientEncryptPacket -> Usado do cliente para o servidor;
