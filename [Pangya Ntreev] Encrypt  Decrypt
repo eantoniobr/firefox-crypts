@@ -1,0 +1,412 @@
+
+decrypt.c
+[code]#include "decrypt.h"
+
+short int SetByteInfoDecrypt = 0;
+
+void SetByteDecrypt(unsigned short int byte)
+{
+SetByteInfoDecrypt = byte;
+}
+
+void DecryptPacket(unsigned char *packet_buffer, unsigned int size_packet)
+{
+int tmp;
+
+/*
+if(RECV_DEBUG_MODE_TYPE() == 1)
+printf("************ Encrypt ************\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("************ Encrypt *************");
+
+ShowPacketInHex(packet_buffer, size_packet);
+*/
+
+for(int i = size_packet-1; i > 6; i--)
+{
+tmp = packet_buffer[i];
+tmp ^= packet_buffer[i-4];
+packet_buffer[i-4] = tmp;
+}
+
+/*
+if(RECV_DEBUG_MODE_TYPE() == 1)
+printf("************ Decrypt ************\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("************ Decrypt *************");
+
+ShowPacketInHex(packet_buffer, size_packet+4);
+
+if(RECV_DEBUG_MODE_TYPE() == 1)
+printf("*********************************\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("*********************************");
+*/
+}
+
+void ENCDecryptPacket(unsigned char *packet_decrypt, unsigned char *packet_buffer, unsigned int size_packet)
+{
+unsigned short int tmp_byte;
+unsigned short int tmp_bl;
+unsigned short int tmp_xor;
+
+//printf("SetByteInfo [%d]\n", SetByteInfo);
+tmp_byte = SetByteInfoDecrypt << 8;
+tmp_byte += packet_buffer[0];
+//printf("Shif 8 << byte [%x] + packet_buffer[0]\n", tmp_byte);
+tmp_bl = TabletEncrypt[tmp_byte];
+//printf("tmp_bl [%x]\n", tmp_bl);
+
+tmp_xor = packet_buffer[3];
+tmp_xor ^= tmp_bl;
+
+//printf("xor [%x]\n", tmp_xor);
+
+/*
+if(RECV_DEBUG_MODE_TYPE() == 1)
+printf("************ Encrypt ************\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("************ Encrypt *************");
+
+ShowPacketInHex(packet_buffer, size_packet);
+*/
+
+packet_buffer[7] ^= tmp_xor;
+packet_buffer[8] ^= 0x00;
+packet_buffer[9] ^= 0x00;
+packet_buffer[10] ^= 0x00;
+
+CopyString((char*)packet_decrypt, (char*)packet_buffer, size_packet);
+
+for(int i = 10; i < size_packet; i++)
+{
+//printf("%x %x = %x\n", packet_buffer[i], packet_buffer[i-4], packet_buffer[i] ^packet_buffer[i-4]);
+//packet_buffer[i] ^= packet_buffer[i-4];
+packet_decrypt[i] ^= packet_decrypt[i-4];
+}
+
+/*
+if(RECV_DEBUG_MODE_TYPE() == 1)
+printf("************ Decrypt ************\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("************ Decrypt *************");
+
+ShowPacketInHex(packet_decrypt, size_packet+4);
+
+if(RECV_DEBUG_MODE_TYPE() == 1)
+printf("*********************************\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("*********************************");
+*/
+}
+
+
+void EMCClientDecryptPacketSend(/*unsigned char *packet_encrypt,*/ unsigned char *packet_buffer, unsigned int size_packet)
+{
+int tmp;
+
+unsigned short int tmp_byte;
+unsigned short int tmp_bl;
+unsigned short int tmp_dl;
+
+//string_copy(packet_encrypt, packet_buffer, 12);
+
+tmp_byte = SetByteInfoDecrypt << 8;
+
+//printf("%x", packet_buffer[0]);
+
+tmp_bl = TabletEncrypt[tmp_byte+packet_buffer[0]];
+tmp_dl = TabletEncrypt[tmp_byte+packet_buffer[0]+0x1000];
+
+tmp_byte += packet_buffer[0];
+
+//printf("BL -> %x DL -> %x\n", tmp_bl, tmp_dl);
+
+packet_buffer[4] = tmp_dl;
+//packet_encrypt[4] = tmp_dl;
+
+/*
+if(RECV_DEBUG_MODE_TYPE() == 1)
+printf("************ Encrypt ************\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("************ Encrypt *************");
+
+ShowPacketInHex(packet_buffer, size_packet);
+*/
+
+for(int i = 8; i < 12; i++)
+{
+tmp = packet_buffer[i-4];
+tmp ^= packet_buffer[i];
+//printf("%x ^ %x = %x\n", packet_buffer[i-4], packet_buffer[i], tmp);
+packet_buffer[i] = tmp;
+}
+
+for(int i = 8; i < size_packet; i++)
+{
+tmp = packet_buffer[i];
+tmp ^= packet_buffer[i+4];
+//printf("%x ^ %x = %x\n", packet_buffer[i], packet_buffer[i+4], tmp);
+packet_buffer[i+4] = tmp;
+}
+
+packet_buffer[4] ^= tmp_bl;
+packet_buffer[5] ^= 0x00;
+packet_buffer[6] ^= 0x00;
+packet_buffer[7] ^= 0x00;
+
+/*
+packet_encrypt[4] = packet_buffer[4];
+packet_encrypt[5] = packet_buffer[5];
+packet_encrypt[6] = packet_buffer[6];
+packet_encrypt[7] = packet_buffer[7];
+*/
+
+/*for(int i = 8; i < size_packet+4; i++)
+{
+packet_encrypt[i] = packet_buffer[i-4];
+}*/
+
+/*
+if(RECV_DEBUG_MODE_TYPE() == 1)
+printf("************ Decrypt ************\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("************ Decrypt *************");
+
+ShowPacketInHex(packet_buffer, size_packet+4);
+
+if(RECV_DEBUG_MODE_TYPE() == 1)
+printf("*********************************\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("*********************************");
+*/
+}[/CODE]
+
+encrypt.c
+
+
+[code]#include "encrypt.h"
+#include "decrypt.h"
+
+unsigned int packet_key0_add = 0;
+unsigned int packet_key1_add = 0;
+
+/*short int SetByteInfoEncrypt = 0;
+
+void SetByteEncrypt(unsigned short int byte)
+{
+SetByteInfoEncrypt = byte;
+}*/
+
+void reset_keys()
+{
+packet_key0_add = 0;
+packet_key1_add = 0;
+}
+
+void EncryptPacket(short int SetByteInfo, unsigned char *packet_buffer, unsigned int size_packet)
+{
+unsigned short int tmp_byte;
+unsigned short int tmp_bl;
+unsigned short int tmp_xor;
+
+//printf("SetByteInfo [%d]\n", SetByteInfo);
+tmp_byte = SetByteInfo << 8;
+tmp_byte += packet_buffer[0];
+//printf("Shif 8 << byte [%x] + packet_buffer[0]\n", tmp_byte);
+tmp_bl = TabletEncrypt[tmp_byte];
+//printf("tmp_bl [%x]\n", tmp_bl);
+
+tmp_xor = packet_buffer[3];
+tmp_xor ^= tmp_bl;
+
+//printf("xor [%x]\n", tmp_xor);
+
+
+for(int i = size_packet; i >= 10; i--)
+{
+//printf("%x %x = %x\n", packet_buffer[i], packet_buffer[i-4], packet_buffer[i] ^packet_buffer[i-4]);
+packet_buffer[i] ^= packet_buffer[i-4];
+}
+
+packet_buffer[7] ^= tmp_xor;
+packet_buffer[8] ^= 0x00;
+packet_buffer[9] ^= 0x00;
+packet_buffer[10] ^= 0x00;
+}
+
+void ClientEncryptPacket(int SetByteInfoEncrypt, unsigned char *packet_encrypt, unsigned char *packet_buffer, unsigned int size_packet)
+{
+int tmp;
+
+unsigned short int tmp_byte;
+unsigned short int tmp_bl;
+unsigned short int tmp_dl;
+
+//packet_buffer[0] = 0xAD; // 0x8A
+
+//packet_buffer[0] = rand() % 0xFE + 0x01;
+
+string_copy(packet_encrypt, packet_buffer, 12);
+
+tmp_byte = SetByteInfoEncrypt << 8;
+
+tmp_bl = TabletEncrypt[tmp_byte+packet_buffer[0]];
+tmp_dl = TabletEncrypt[tmp_byte+packet_buffer[0]+0x1000];
+
+tmp_byte += packet_buffer[0];
+
+//printf("BL -> %x DL -> %x\n", tmp_bl, tmp_dl);
+
+packet_buffer[4] = tmp_dl;
+packet_encrypt[4] = tmp_dl;
+
+for(int i = 8; i <= 12; i++)
+{
+tmp = packet_buffer[i-4];
+tmp ^= packet_buffer[i];
+packet_encrypt[i] = tmp;
+}
+
+for(int i = 12; i < size_packet; i++)
+{
+tmp = packet_buffer[i-4];
+tmp ^= packet_buffer[i];
+packet_encrypt[i] = tmp;
+}
+
+packet_buffer[4] ^= tmp_bl;
+packet_buffer[5] ^= 0x00;
+packet_buffer[6] ^= 0x00;
+packet_buffer[7] ^= 0x00;
+
+packet_encrypt[4] = packet_buffer[4];
+packet_encrypt[5] = packet_buffer[5];
+packet_encrypt[6] = packet_buffer[6];
+packet_encrypt[7] = packet_buffer[7];
+
+for(int i = size_packet; i < size_packet+4; i++)
+{
+packet_encrypt[i] = packet_buffer[i-4];
+}
+}
+
+/*void string_copy(unsigned char *string1, unsigned char *string2, unsigned int size)
+{
+for(int i = 0; i <= size; i++)
+{
+string1[i] = string2[i];
+}
+}*/
+
+void PacketSoma(int SetByteInfoEncrypt, unsigned char *buffer, int size, bool SetIncrementTwoByte)
+{
+unsigned short int tmp_byte;
+unsigned short int tmp_bl;
+unsigned short int tmp_dl;
+
+//buffer[0] = rand() % 0xFE + 0x01;
+
+tmp_byte = SetByteInfoEncrypt << 8;
+
+tmp_bl = TabletEncrypt[tmp_byte+buffer[0]];
+tmp_dl = TabletEncrypt[tmp_byte+buffer[0]+0x1000];
+
+buffer[4] = tmp_dl ^ tmp_bl;
+buffer[3] = packet_key0_add;
+
+//if((buffer[size-2] == 0xF4) && (buffer[size-1] == 0x00))
+if(SetIncrementTwoByte)
+{
+buffer[size-3] = packet_key1_add;
+packet_key1_add++;
+}
+
+packet_key0_add++;[/CODE]
+
+EncryptPacket -> Usado do servidor para o cliente.
+ClientEncryptPacket -> Usado do cliente para o servidor;
+
+Servidor para Cliente
+Quote
+
+EncryptPacket(KEY_ENCRYPT_DECRYPT, (unsigned char*)buffer, size_packet);
+
+KEY_ENCRYPT_DECRYPT = Offset usado pelo cliente e servidor, ele é enviado no primeiro packet do login_server e o primeiro do game_server, ele vai servir tanto para o cliente quanto para o servidor.
+
+buffer -> contém o packet decryptado, ele retorna o packet cryptado no mesmo buffer.
+
+size_packet -> tamanho do packet
+
+
+Antes de tudo, sete o KEY_ENCRYPT_DECRYPT em
+
+SetByteEncrypt & SetByteDecrypt
+
+SetByteEncrypt(KEY_ENCRYPT_DECRYPT);
+SetByteDecrypt(KEY_ENCRYPT_DECRYPT);
+
+ClientEncryptPacket -> Cliente para Servidor
+EncryptPacket-> Servidor para Cliente
+
+Segue o mesmo padrão do decrypt:
+Quote
+
+EncryptPacket((unsigned char*)buffer, size_packet);
+A diferença que já foi setado o KEY_ENCRYPT_DECRYPT
+
+ClientEncryptPacket((char*)packet_finally, packet_decrypt, size_packet);
+packet_finally -> Packet que será enviado no send.
+packet_decrypt -> Packet que contém o packet decryptado.
+size_packet -> size do packet decryptado.
+
+Função que separa vários packet de um mesmo buffer
+unsigned int DecryptRecvPacket(unsigned char *buffer_decrypt, unsigned char *buffer_recv, unsigned int size)
+{
+/*
+if(RECV_DEBUG_MODE_TYPE() == 1)
+InfoServer("Recv Packet Decrypt\n");
+else if(RECV_DEBUG_MODE_TYPE() == 2)
+AddStringToListBoxDebug("Recv Packet Decrypt");
+*/
+
+unsigned int tmp_other = 0x01;
+unsigned int retn_tmp;
+unsigned int tmp_ebp;
+
+retn_tmp = recv(GSocket, (char*)buffer_recv, size, 0);
+
+if(retn_tmp != 0 && retn_tmp != -1)
+{
+for(;;)
+{
+tmp_ebp = ((unsigned char)buffer_recv[tmp_other+1]*0x100)+(unsigned char)buffer_recv[tmp_other]+3;
+
+ENCDecryptPacket(buffer_decrypt, (unsigned char*)buffer_recv+tmp_other-1, tmp_ebp);
+// COLOQUE AQUI A CHAMADA PARA A FUNÇÂO QUE VERIFICA OS PACKETS, EXEMPLO
+// AnalysePacket(buffer_recv+tmp_other-1, tmp_ebp);
+
+if(tmp_other+((unsigned char)buffer_recv[tmp_other+1]*0x100)+(unsigned char)buffer_recv[tmp_other]+3 <= retn_tmp-1)
+{
+printf("Info Next -> %x Addr %x\n", ((unsigned char)buffer_recv[tmp_other+1]*0x100)+(unsigned char)buffer_recv[tmp_other]+3, tmp_other+((unsigned char)buffer_recv[tmp_other+1]*0x100)+(unsigned char)buffer_recv[tmp_other]+3);
+tmp_other += ((unsigned char)buffer_recv[tmp_other+1]*0x100)+(unsigned char)buffer_recv[tmp_other]+3;
+}
+else
+break;
+}
+}
+
+return retn_tmp;
+}DecryptRecvPacket use essa função caso tenha mais que um packet no mesmo buffer.
+Coloque em baixo de ENCDecryptPacket um AnalysePacket(buffer_recv+tmp_other-1, tmp_ebp); que fica a seu critério, tmp_ebp marca a size do seu buffer que foi removido.
+
+Download Codigo Fonte
+
+Quote
+
+[url="http://www.sendspace.com/file/zl7eaw"]SendSpace[/URL]
+[url="http://www.multiupload.nl/RAMPHH2P85"]Multiupload[/URL]
+
+
+
+by Firefox
