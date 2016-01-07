@@ -1,5 +1,5 @@
 uncompress.asm
-[code].386
+.386
 .model flat,stdcall
 option casemap:none
 
@@ -310,11 +310,11 @@ call_compress_new00 endp
 
 ;--------------------------------------------------------------------------------
 
-End DllEntry[/CODE]
+End DllEntry
 
 uncompress.inc
 
-[code]include windows.inc
+include windows.inc
 include user32.inc
 include kernel32.inc
 include gdi32.inc
@@ -342,20 +342,20 @@ call_compress_new00 PROTO
 
 .data?
 
-hInstance dd ? [/CODE]
+hInstance dd ? 
 
 uncompress.def
 
-[code]LIBRARY uncompress.dll
+LIBRARY uncompress.dll
 EXPORTS
 call_uncompress
 call_encrypt
 function_compress
-call_compress_ret8 [/CODE]
+call_compress_ret8 
 
 para usar no C\C++
 
-[code]typedef void (__stdcall *uncompress_packet)(unsigned char* local_uncompress, int size_uncompress, unsigned char* recv_packet);
+typedef void (__stdcall *uncompress_packet)(unsigned char* local_uncompress, int size_uncompress, unsigned char* recv_packet);
 
 int FCompressPacket(unsigned char *packet_decrypt, unsigned char *packet_encrypt, int size_packet);
 
@@ -375,10 +375,10 @@ exit(1);
 
 CompressPacket = (compress_packet)GetProcAddress(HLibrary, "call_compress_ret8");
 UnCompressPacket = (uncompress_packet)GetProcAddress(uncompressDLL, "call_uncompress");
-}[/CODE]
+}
 
 e para usar ...
-[code]CompressPacket((unsigned char*)packet_decrypt, size_packet, packet_encrypt-4, erase, erase);
+CompressPacket((unsigned char*)packet_decrypt, size_packet, packet_encrypt-4, erase, erase);
 
 packet_decrypt -> packet decryptado para compress
 size_packet -> tamanho do packet
@@ -391,7 +391,7 @@ UnCompressPacket((unsigned char*)buffer_tmp, bytes_recv, packet_decrypt+4);
 buffer_tmp -> buffer onde vai ser decompress.
 bytes_recv -> buffer recebido jรก decryptado.
 packet_decrypt+4 -> subtrai 4 ao tamanho do buffer total.
-Source + DLL[/CODE]
+Source + DLL
 
 [url="http://www.sendspace.com/file/6yl0uj"]SendSpace[/URL]
 [url="http://www.multiupload.nl/KEL8GE7TKY"]MultiClient[/URL]
