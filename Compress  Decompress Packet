@@ -1,0 +1,399 @@
+uncompress.asm
+[code].386
+.model flat,stdcall
+option casemap:none
+
+include uncompress.inc
+
+.data
+
+packet_compress db 000h, 000h, 000h, 037h, 00Dh, 040h, 000h, 000h, 010h, 000h, 028h, 065h, 034h, 031h, 029h, 045h, 06Dh, 065h, 06Ch, 06Ch, 079h, 08Bh, 001h, 020h, 000h, 041h, 03Dh, 000h, 000h, 011h, 000h, 000h
+local_decompress db 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
+
+libraryadd db 'msvcr100.dll', 0
+string_memset db 'memset', 0
+string_sprintf db 'sprintf', 0
+memset dword 00h
+sprintf dword 00h
+
+mypush00 db "::COMPRESS -> The result should be zero! (res : %d)", 0
+.code
+
+DllEntry proc hInst:HINSTANCE, reason:DWORD, reserved1:DWORD
+
+;mov eax, offset packet_compress
+;push eax
+;mov eax, sizeof packet_compress
+;push eax
+;mov eax, offset local_decompress
+;push eax
+;call call_uncompress
+
+invoke LoadLibrary, addr libraryadd
+mov edi, eax
+invoke GetProcAddress, edi, addr string_memset
+mov memset, eax
+
+invoke GetProcAddress, edi, addr string_sprintf
+mov sprintf, eax
+
+push hInst
+pop hInstance
+mov eax,TRUE
+ret
+
+DllEntry Endp
+
+call_uncompress proc local_uncompress:DWORD, size_uncompress:DWORD, local_packet:DWORD
+push ebp
+mov ecx, local_uncompress
+mov edx, size_uncompress
+mov edi, local_packet
+
+push 0
+LEA EAX,DWORD PTR SS:[EBP-8Ch]
+PUSH EAX
+PUSH ECX
+ADD EDX, -4h
+PUSH EDX
+ADD EDI, 4h
+PUSH EDI
+
+call function_test
+add esp, 14h
+
+pop ebp
+ret 12
+call_uncompress endp
+
+function_test proc Param1:DWORD, Param2:DWORD, Param3:DWORD, Param4:DWORD, Param5:DWORD
+db 055h, 08Bh, 0ECh, 08Bh, 04Dh, 014h, 08Bh, 045h, 00Ch, 053h, 056h, 057h, 08Bh, 07Dh, 008h, 0C7h, 001h, 000h, 000h, 000h, 000h, 08Ah, 017h, 08Dh, 01Ch, 007h, 08Bh, 045h, 010h, 08Bh, 0CFh, 080h
+db 0FAh, 011h, 076h, 01Dh, 00Fh, 0B6h, 0F2h, 083h, 0EEh, 011h, 08Dh, 04Fh, 001h, 083h, 0FEh, 004h, 00Fh, 082h, 0CAh, 000h, 000h, 000h, 08Ah, 011h, 088h, 010h, 040h, 041h, 04Eh, 075h, 0F7h, 0EBh
+db 078h, 00Fh, 0B6h, 031h, 041h, 083h, 0FEh, 010h, 00Fh, 083h, 0D2h, 000h, 000h, 000h, 085h, 0F6h, 075h, 022h, 080h, 039h, 000h, 075h, 015h, 0EBh, 007h, 08Dh, 0A4h, 024h, 000h, 000h, 000h, 000h
+db 041h, 081h, 0C6h, 0FFh, 000h, 000h, 000h, 080h, 039h, 000h, 074h, 0F4h, 00Fh, 0B6h, 011h, 08Dh, 074h, 016h, 00Fh, 041h, 08Bh, 011h, 089h, 010h, 083h, 0C0h, 004h, 083h, 0C1h, 004h, 04Eh, 074h
+db 038h, 083h, 0FEh, 004h, 072h, 02Ah, 08Bh, 011h, 089h, 010h, 083h, 0EEh, 004h, 083h, 0C0h, 004h, 083h, 0C1h, 004h, 083h, 0FEh, 004h, 073h, 0EEh, 085h, 0F6h, 074h, 01Dh, 08Dh, 064h, 024h, 000h
+db 08Ah, 011h, 088h, 010h, 040h, 041h, 04Eh, 075h, 0F7h, 0EBh, 00Eh, 0EBh, 003h, 08Dh, 049h, 000h, 08Ah, 011h, 088h, 010h, 040h, 041h, 04Eh, 075h, 0F7h, 00Fh, 0B6h, 031h, 041h, 083h, 0FEh, 010h
+db 073h, 05Eh, 00Fh, 0B6h, 011h, 003h, 0D2h, 003h, 0D2h, 0C1h, 0EEh, 002h, 08Bh, 0F8h, 02Bh, 0FEh, 02Bh, 0FAh, 00Fh, 0B6h, 097h, 0FFh, 0F7h, 0FFh, 0FFh, 088h, 010h, 00Fh, 0B6h, 097h, 000h, 0F8h
+db 0FFh, 0FFh, 088h, 050h, 001h, 00Fh, 0B6h, 097h, 001h, 0F8h, 0FFh, 0FFh, 041h, 088h, 050h, 002h, 083h, 0C0h, 003h, 00Fh, 0B6h, 071h, 0FEh, 083h, 0E6h, 003h, 00Fh, 084h, 041h, 0FFh, 0FFh, 0FFh
+db 08Ah, 011h, 088h, 010h, 040h, 041h, 083h, 0FEh, 001h, 076h, 011h, 08Ah, 011h, 088h, 010h, 040h, 041h, 083h, 0FEh, 002h, 076h, 006h, 08Ah, 011h, 088h, 010h, 040h, 041h, 00Fh, 0B6h, 031h, 041h
+db 083h, 0FEh, 040h, 072h, 03Ah, 08Bh, 0D6h, 0C1h, 0EAh, 002h, 083h, 0E2h, 007h, 08Bh, 0F8h, 02Bh, 0FAh, 00Fh, 0B6h, 011h, 003h, 0D2h, 003h, 0D2h, 003h, 0D2h, 02Bh, 0FAh, 0C1h, 0EEh, 005h, 04Fh
+db 041h, 04Eh, 00Fh, 0B6h, 017h, 088h, 010h, 00Fh, 0B6h, 057h, 001h, 088h, 050h, 001h, 083h, 0C0h, 002h, 083h, 0C7h, 002h, 08Ah, 017h, 088h, 010h, 040h, 047h, 04Eh, 075h, 0F7h, 0EBh, 094h, 083h
+db 0FEh, 020h, 072h, 030h, 083h, 0E6h, 01Fh, 075h, 01Bh, 080h, 039h, 000h, 075h, 00Eh, 08Bh, 0FFh, 041h, 081h, 0C6h, 0FFh, 000h, 000h, 000h, 080h, 039h, 000h, 074h, 0F4h, 00Fh, 0B6h, 011h, 08Dh
+db 074h, 016h, 01Fh, 041h, 00Fh, 0B7h, 011h, 0C1h, 0EAh, 002h, 08Bh, 0F8h, 02Bh, 0FAh, 04Fh, 083h, 0C1h, 002h, 0EBh, 048h, 08Bh, 0F8h, 083h, 0FEh, 010h, 00Fh, 082h, 08Fh, 000h, 000h, 000h, 08Bh
+db 0D6h, 083h, 0E2h, 008h, 0C1h, 0E2h, 00Bh, 02Bh, 0FAh, 083h, 0E6h, 007h, 075h, 019h, 080h, 039h, 000h, 075h, 00Ch, 041h, 081h, 0C6h, 0FFh, 000h, 000h, 000h, 080h, 039h, 000h, 074h, 0F4h, 00Fh
+db 0B6h, 011h, 08Dh, 074h, 016h, 007h, 041h, 00Fh, 0B7h, 011h, 0C1h, 0EAh, 002h, 02Bh, 0FAh, 083h, 0C1h, 002h, 03Bh, 0F8h, 074h, 07Bh, 081h, 0EFh, 000h, 040h, 000h, 000h, 083h, 0FEh, 006h, 00Fh
+db 082h, 05Dh, 0FFh, 0FFh, 0FFh, 08Bh, 0D0h, 02Bh, 0D7h, 083h, 0FAh, 004h, 00Fh, 08Ch, 050h, 0FFh, 0FFh, 0FFh, 08Bh, 017h, 089h, 010h, 083h, 0C0h, 004h, 083h, 0C7h, 004h, 083h, 0EEh, 002h, 090h
+db 08Bh, 017h, 089h, 010h, 083h, 0EEh, 004h, 083h, 0C0h, 004h, 083h, 0C7h, 004h, 083h, 0FEh, 004h, 073h, 0EEh, 085h, 0F6h, 00Fh, 084h, 0D9h, 0FEh, 0FFh, 0FFh, 08Dh, 09Bh, 000h, 000h, 000h, 000h
+db 08Ah, 017h, 088h, 010h, 040h, 047h, 04Eh, 075h, 0F7h, 0E9h, 0C5h, 0FEh, 0FFh, 0FFh, 00Fh, 0B6h, 011h, 003h, 0D2h, 0C1h, 0EEh, 002h, 003h, 0D2h, 02Bh, 0FEh, 02Bh, 0FAh, 00Fh, 0B6h, 057h, 0FFh
+db 088h, 010h, 00Fh, 0B6h, 017h, 041h, 088h, 050h, 001h, 083h, 0C0h, 002h, 0E9h, 0A2h, 0FEh, 0FFh, 0FFh, 02Bh, 045h, 010h, 08Bh, 055h, 014h, 089h, 002h, 03Bh, 0CBh, 075h, 007h, 05Fh, 05Eh, 033h
+db 0C0h, 05Bh, 05Dh, 0C3h, 01Bh, 0C0h, 05Fh, 083h, 0E0h, 0FCh, 05Eh, 083h, 0C0h, 0FCh, 05Bh, 05Dh, 0C3h
+ret
+function_test endp
+
+call_compress_ret8 proc Packet:DWORD, SizeP:DWORD, packetEncrypt:DWORD, Erase01:DWORD, Erase02:DWORD
+
+mov eax, Erase02
+PUSH EAX ; Packet
+
+mov ecx, Erase01
+mov edx, packetEncrypt
+mov ebx, SizeP
+mov eax, Packet
+
+PUSH ECX ; Size
+ADD EDX,04h
+PUSH EDX ; Packet Encrypt
+PUSH EBX ; Packet Erase
+PUSH EAX ; Packet Erase
+call call_compress_new
+ADD ESP,14h
+
+ret 14h
+call_compress_ret8 endp
+
+
+function_compress proc
+
+db 055h, 08Bh, 0ECh, 051h, 08Bh, 045h, 00Ch, 08Bh, 04Dh, 010h, 053h, 056h, 057h, 08Bh, 07Dh, 008
+db 08Bh, 0F1h, 083h, 0F8h, 00Dh, 077h, 004h, 08Bh, 0D8h, 0EBh, 01Ch, 08Bh, 055h, 018h, 08Bh, 075
+db 014h, 052h, 056h, 051h, 057h
+
+call function_two
+
+db 08Bh, 036h, 003h, 075h, 010h, 08Bh, 04Dh, 010h, 08Bh, 0D8h, 08Bh, 045h, 00Ch, 085h, 0DBh, 00Fh
+db 084h, 080h, 000h, 000h, 000h, 02Bh, 0FBh, 003h, 0F8h, 089h, 07Dh, 0FCh, 03Bh, 0F1h, 075h, 00Dh
+db 081h, 0FBh, 0EEh, 000h, 000h, 000h, 077h, 005h, 08Dh, 043h, 011h, 0EBh, 05Ch, 083h, 0FBh, 003h
+db 077h, 005h, 008h, 05Eh, 0FEh, 0EBh, 055h, 083h, 0FBh, 012h, 077h, 007h, 08Dh, 053h, 0FDh, 088h
+db 016h, 0EBh, 048h, 08Dh, 043h, 0EEh, 0C6h, 006h, 000h, 046h, 089h, 045h, 00Ch, 03Dh, 0FFh, 000h
+db 000h, 000h, 076h, 035h, 08Dh, 088h, 000h, 0FFh, 0FFh, 0FFh, 0B8h, 081h, 080h, 080h, 080h, 0F7h
+db 0E1h, 08Bh, 0FAh, 0C1h, 0EFh, 007h, 047h, 057h, 06Ah, 000h, 056h
+
+mov edx, memset
+call edx
+
+db 083h, 0C4h, 00Ch, 003h, 0F7h, 090h, 081h, 06Dh, 00Ch, 0FFh, 000h, 000h, 000h, 04Fh, 075h, 0F6h
+db 08Bh, 045h, 00Ch, 08Bh, 07Dh, 0FCh, 08Bh, 04Dh, 010h, 088h, 006h, 046h, 08Ah, 017h, 088h, 016h
+db 046h, 047h, 04Bh, 075h, 0F7h, 08Bh, 045h, 014h, 066h, 0C7h, 006h, 011h, 000h, 083h, 0C6h, 002h
+db 0C6h, 006h, 000h, 02Bh, 0F1h, 046h, 05Fh, 089h, 030h, 05Eh, 033h, 0C0h, 05Bh, 08Bh, 0E5h, 05Dh
+db 0C3h
+
+function_compress endp
+
+function_two proc
+db 055h, 08Bh, 0ECh, 083h, 0ECh, 01Ch, 053h, 056h, 08Bh, 075h, 00Ch, 057h, 08Bh, 07Dh, 008h, 08Dh
+db 00Ch, 007h, 089h, 07Dh, 0F8h, 089h, 04Dh, 0F0h, 083h, 0C7h, 004h, 0EBh, 003h, 08Dh, 049h, 000h
+db 00Fh, 0B6h, 047h, 003h, 00Fh, 0B6h, 057h, 002h, 00Fh, 0B6h, 04Fh, 001h, 0C1h, 0E0h, 006h, 033h
+db 0C2h, 00Fh, 0B6h, 017h, 0C1h, 0E0h, 005h, 033h, 0C1h, 0C1h, 0E0h, 005h, 033h, 0C2h, 08Bh, 055h
+db 014h, 08Bh, 0C8h, 0C1h, 0E1h, 005h, 003h, 0C1h, 0C1h, 0E8h, 005h, 025h, 0FFh, 03Fh, 000h, 000h
+db 08Bh, 01Ch, 082h, 08Dh, 00Ch, 082h, 03Bh, 05Dh, 008h, 00Fh, 082h, 07Fh, 002h, 000h, 000h, 08Bh
+db 0D7h, 02Bh, 0D3h, 089h, 055h, 0FCh, 04Ah, 089h, 07Dh, 0ECh, 089h, 055h, 0F4h, 081h, 0FAh, 0FEh
+db 0BFh, 000h, 000h, 00Fh, 087h, 065h, 002h, 000h, 000h, 081h, 07Dh, 0FCh, 000h, 008h, 000h, 000h
+db 076h, 050h, 08Ah, 057h, 003h, 038h, 053h, 003h, 074h, 048h, 08Bh, 04Dh, 014h, 025h, 0FFh, 007h
+db 000h, 000h, 035h, 01Fh, 020h, 000h, 000h, 08Bh, 01Ch, 081h, 08Dh, 00Ch, 081h, 03Bh, 05Dh, 008h
+db 00Fh, 082h, 038h, 002h, 000h, 000h, 08Bh, 0C7h, 02Bh, 0C3h, 08Dh, 050h, 0FFh, 089h, 045h, 0FCh
+db 089h, 055h, 0F4h, 081h, 0FAh, 0FEh, 0BFh, 000h, 000h, 00Fh, 087h, 01Fh, 002h, 000h, 000h, 03Dh
+db 000h, 008h, 000h, 000h, 076h, 00Ch, 08Ah, 047h, 003h, 038h, 043h, 003h, 00Fh, 085h, 00Ch, 002h
+db 000h, 000h, 066h, 08Bh, 013h, 066h, 03Bh, 017h, 00Fh, 085h, 000h, 002h, 000h, 000h, 08Ah, 047h
+db 002h, 038h, 043h, 002h, 00Fh, 085h, 0F4h, 001h, 000h, 000h, 08Bh, 055h, 0F8h, 08Bh, 0C7h, 02Bh
+db 0C2h, 089h, 039h, 074h, 077h, 089h, 045h, 0E4h, 083h, 0F8h, 003h, 077h, 005h, 008h, 046h, 0FEh
+db 0EBh, 05Eh, 083h, 0F8h, 012h, 077h, 005h, 08Dh, 048h, 0FDh, 0EBh, 04Ah, 08Dh, 048h, 0EEh, 0C6h
+db 006h, 000h, 046h, 089h, 04Dh, 0ECh, 081h, 0F9h, 0FFh, 000h, 000h, 000h, 076h, 038h, 081h, 0C1h
+db 000h, 0FFh, 0FFh, 0FFh, 0B8h, 081h, 080h, 080h, 080h, 0F7h, 0E1h, 0C1h, 0EAh, 007h, 042h, 052h
+db 06Ah, 000h, 056h, 089h, 055h, 0E8h
+
+mov edx, memset
+call edx
+
+db 08Bh, 045h, 0E8h, 083h, 0C4h, 00Ch, 003h, 0F0h, 081h, 06Dh, 0ECh, 0FFh, 000h, 000h, 000h, 048h
+db 075h, 0F6h, 08Bh, 04Dh, 0ECh, 08Bh, 045h, 0E4h, 08Bh, 055h, 0F8h, 088h, 00Eh, 046h, 08Dh, 0A4h
+db 024h, 000h, 000h, 000h, 000h, 08Ah, 00Ah, 088h, 00Eh, 046h, 042h, 048h, 075h, 0F7h, 089h, 055h
+db 0F8h, 08Ah, 047h, 003h, 083h, 0C7h, 004h, 038h, 043h, 003h, 00Fh, 085h, 0EBh, 000h, 000h, 000h
+db 08Ah, 00Fh, 047h, 038h, 04Bh, 004h, 00Fh, 085h, 0DFh, 000h, 000h, 000h, 08Ah, 007h, 047h, 038h
+db 043h, 005h, 00Fh, 085h, 0D3h, 000h, 000h, 000h, 08Ah, 00Fh, 047h, 038h, 04Bh, 006h, 00Fh, 085h
+db 0C7h, 000h, 000h, 000h, 08Ah, 007h, 047h, 038h, 043h, 007h, 00Fh, 085h, 0BBh, 000h, 000h, 000h
+db 08Ah, 00Fh, 047h, 038h, 04Bh, 008h, 00Fh, 085h, 0AFh, 000h, 000h, 000h, 08Bh, 045h, 0F0h, 083h
+db 0C3h, 009h, 03Bh, 0F8h, 073h, 00Ch, 08Ah, 013h, 03Ah, 017h, 075h, 006h, 047h, 043h, 03Bh, 0F8h
+db 072h, 0F4h, 08Bh, 045h, 0FCh, 08Bh, 0DFh, 02Bh, 05Dh, 0F8h, 03Dh, 000h, 040h, 000h, 000h, 077h
+db 022h, 08Bh, 045h, 0F4h, 089h, 045h, 0FCh, 083h, 0FBh, 021h, 077h, 00Fh, 080h, 0EBh, 002h, 080h
+db 0CBh, 020h, 088h, 01Eh, 08Bh, 0C8h, 0E9h, 0D1h, 000h, 000h, 000h, 083h, 0EBh, 021h, 0C6h, 006h
+db 020h, 0EBh, 02Ah, 02Dh, 000h, 040h, 000h, 000h, 089h, 045h, 0FCh, 0C1h, 0E8h, 00Bh, 024h, 008h
+db 083h, 0FBh, 009h, 077h, 011h, 08Bh, 04Dh, 0FCh, 080h, 0EBh, 002h, 00Ah, 0C3h, 00Ch, 010h, 088h
+db 006h, 0E9h, 0A6h, 000h, 000h, 000h, 083h, 0EBh, 009h, 00Ch, 010h, 088h, 006h, 046h, 081h, 0FBh
+db 0FFh, 000h, 000h, 000h, 076h, 02Eh, 08Dh, 08Bh, 000h, 0FFh, 0FFh, 0FFh, 0B8h, 081h, 080h, 080h
+db 080h, 0F7h, 0E1h, 0C1h, 0EAh, 007h, 042h, 052h, 06Ah, 000h, 056h, 089h, 055h, 0E4h
+
+mov edx, memset
+call edx
+
+db 08Bh, 045h, 0E4h, 083h, 0C4h, 00Ch, 003h, 0F0h, 081h, 0EBh, 0FFh, 000h, 000h, 000h, 048h, 075h
+db 0F7h, 08Bh, 04Dh, 0FCh, 088h, 01Eh, 0EBh, 061h, 08Bh, 04Dh, 0FCh, 04Fh, 08Bh, 0C7h, 02Bh, 0C2h
+db 081h, 0F9h, 000h, 008h, 000h, 000h, 077h, 026h, 08Bh, 04Dh, 0F4h, 0FEh, 0C8h, 002h, 0C0h, 002h
+db 0C0h, 002h, 0C0h, 08Ah, 0D1h, 080h, 0E2h, 007h, 00Ah, 0C2h, 002h, 0C0h, 002h, 0C0h, 0C1h, 0E9h
+db 003h, 088h, 006h, 088h, 04Eh, 001h, 083h, 0C6h, 002h, 089h, 07Dh, 0F8h, 0EBh, 045h, 02Ch, 002h
+db 081h, 0F9h, 000h, 040h, 000h, 000h, 077h, 00Ch, 08Bh, 04Dh, 0F4h, 00Ch, 020h, 089h, 04Dh, 0FCh
+db 088h, 006h, 0EBh, 015h, 081h, 0E9h, 000h, 040h, 000h, 000h, 08Bh, 0D1h, 0C1h, 0EAh, 00Bh, 080h
+db 0E2h, 008h, 00Ah, 0D0h, 080h, 0CAh, 010h, 088h, 016h, 08Ah, 0C1h, 002h, 0C0h, 046h, 002h, 0C0h
+db 0C1h, 0E9h, 006h, 088h, 006h, 088h, 04Eh, 001h, 083h, 0C6h, 002h, 089h, 07Dh, 0F8h, 0EBh, 003h
+db 089h, 039h, 047h, 08Bh, 045h, 0F0h, 083h, 0C0h, 0F3h, 03Bh, 0F8h, 00Fh, 082h, 031h, 0FDh, 0FFh
+db 0FFh, 02Bh, 075h, 00Ch, 08Bh, 04Dh, 010h, 08Bh, 045h, 0F0h, 02Bh, 045h, 0F8h, 05Fh, 089h, 031h
+db 05Eh, 05Bh, 08Bh, 0E5h, 05Dh, 0C2h, 010h, 000h
+
+function_two endp
+
+call_encrypt proc Param1:DWORD, Param2:DWORD
+mov esi, Param1 ; (Packet Byte para Encrypt)
+push esi
+mov ecx, Param2 ; (Packet para encrypt)
+push ecx
+MOV ECX,0CB4F6Ch
+call function_encrypt
+ret 08h
+call_encrypt endp
+
+function_encrypt proc
+PUSH ebp
+MOV EBP,ESP
+SUB ESP,2Ch
+
+MOV EAX,0BD591C90h
+XOR EAX,EBP
+
+db 089h, 045h, 0FCh
+
+db 08Bh, 055h, 008h, 053h, 056h, 057h, 0B9h, 009h, 000h, 000h, 000h, 08Bh, 0F2h, 08Dh, 07Dh, 0D4h
+db 0F3h, 0A5h, 0A4h, 08Bh, 075h, 00Ch, 033h, 0C0h, 033h, 0C9h, 08Dh, 09Bh, 000h, 000h, 000h, 000h, 08Ah, 01Ch, 030h, 030h, 05Ch, 00Dh, 0D4h, 040h, 083h, 0F8h, 010h, 07Ch, 002h, 033h, 0C0h, 041h
+db 083h, 0F9h, 025h, 07Ch, 0EBh, 0B9h, 009h, 000h, 000h, 000h, 08Dh, 075h, 0D4h, 08Bh, 0FAh, 0F3h, 0A5h, 08Bh, 04Dh, 0FCh, 0A4h, 05Fh, 05Eh, 033h, 0CDh, 05Bh
+MOV esp,ebp
+pop ebp
+ret 08h
+function_encrypt endp
+
+call_compress_new proc
+db 051h, 08Bh, 04Ch, 024h, 010h, 053h, 055h, 08Bh, 06Ch, 024h, 014h, 083h, 0FDh, 00Dh, 056h, 057h
+db 08Bh, 07Ch, 024h, 018h, 08Bh, 0F1h, 077h, 004h, 08Bh, 0DDh, 0EBh, 022h, 08Bh, 044h, 024h, 028h
+db 08Bh, 074h, 024h, 024h, 050h, 056h, 051h, 057h, 08Bh, 0C5h
+call call_compress_new00
+db 08Bh, 036h, 08Bh, 0D8h, 08Bh, 044h, 024h, 030h, 083h, 0C4h, 010h, 003h, 0F0h, 08Bh, 0C8h, 085h
+db 0DBh, 00Fh, 086h, 093h, 000h, 000h, 000h, 02Bh, 0FBh, 003h, 0FDh, 03Bh, 0F1h, 089h, 07Ch, 024h
+db 010h, 075h, 011h, 081h, 0FBh, 0EEh, 000h, 000h, 000h, 077h, 009h, 08Ah, 0D3h, 080h, 0C2h, 011h
+db 088h, 016h, 0EBh, 06Bh, 083h, 0FBh, 003h, 077h, 005h, 008h, 05Eh, 0FEh, 0EBh, 063h, 083h, 0FBh
+db 012h, 077h, 006h, 08Ah, 0C3h, 02Ch, 003h, 0EBh, 054h, 08Dh, 043h, 0EEh, 0C6h, 006h, 000h, 046h
+db 03Dh, 0FFh, 000h, 000h, 000h, 089h, 044h, 024h, 01Ch, 076h, 042h, 08Dh, 088h, 000h, 0FFh, 0FFh
+db 0FFh, 0B8h, 081h, 080h, 080h, 080h, 0F7h, 0E1h, 0C1h, 0EAh, 007h, 042h, 08Bh, 0CAh, 08Bh, 0E9h
+db 0C1h, 0E9h, 002h, 033h, 0C0h, 08Bh, 0FEh, 0F3h, 0ABh, 08Bh, 0CDh, 083h, 0E1h, 003h, 0F3h, 0AAh
+db 003h, 0F2h, 08Bh, 04Ch, 024h, 01Ch, 081h, 0E9h, 0FFh, 000h, 000h, 000h, 04Ah, 089h, 04Ch, 024h
+db 01Ch, 075h, 0EFh, 08Bh, 07Ch, 024h, 010h, 08Bh, 0C1h, 08Bh, 04Ch, 024h, 020h, 088h, 006h, 046h
+db 090h, 08Ah, 017h, 088h, 016h, 046h, 047h, 04Bh, 075h, 0F7h, 08Bh, 044h, 024h, 024h, 0C6h, 006h
+db 011h, 046h, 0C6h, 006h, 000h, 046h, 0C6h, 006h, 000h, 02Bh, 0F1h, 046h, 05Fh, 089h, 030h, 05Eh
+db 05Dh, 033h, 0C0h, 05Bh, 059h, 0C3h
+
+ret
+call_compress_new endp
+
+call_compress_new00 proc
+db 083h, 0ECh, 018h, 053h, 055h, 08Bh, 06Ch, 024h, 024h, 056h, 08Bh, 074h, 024h, 02Ch, 08Dh, 00Ch
+db 028h, 089h, 06Ch, 024h, 010h, 057h, 089h, 04Ch, 024h, 01Ch, 083h, 0C5h, 004h, 08Dh, 049h, 000h
+db 08Ah, 055h, 003h, 08Ah, 04Dh, 002h, 00Fh, 0B6h, 0C9h, 00Fh, 0B6h, 0C2h, 0C1h, 0E0h, 006h, 033h
+db 0C1h, 00Fh, 0B6h, 04Dh, 001h, 0C1h, 0E0h, 005h, 033h, 0C1h, 00Fh, 0B6h, 04Dh, 000h, 0C1h, 0E0h
+db 005h, 033h, 0C1h, 08Bh, 04Ch, 024h, 038h, 06Bh, 0C0h, 021h, 0C1h, 0E8h, 005h, 025h, 0FFh, 03Fh
+db 000h, 000h, 08Bh, 01Ch, 081h, 08Dh, 03Ch, 081h, 03Bh, 05Ch, 024h, 02Ch, 00Fh, 082h, 0BDh, 002h
+db 000h, 000h, 08Bh, 0CDh, 02Bh, 0CBh, 089h, 04Ch, 024h, 010h, 00Fh, 084h, 0AFh, 002h, 000h, 000h
+db 081h, 0F9h, 0FFh, 0BFh, 000h, 000h, 00Fh, 087h, 0A3h, 002h, 000h, 000h, 081h, 0F9h, 000h, 008h
+db 000h, 000h, 076h, 050h, 038h, 053h, 003h, 074h, 04Bh, 08Bh, 04Ch, 024h, 038h, 025h, 0FFh, 007h
+db 000h, 000h, 035h, 01Fh, 020h, 000h, 000h, 08Bh, 01Ch, 081h, 08Dh, 03Ch, 081h, 03Bh, 05Ch, 024h
+db 02Ch, 00Fh, 082h, 078h, 002h, 000h, 000h, 08Bh, 0C5h, 02Bh, 0C3h, 089h, 044h, 024h, 010h, 00Fh
+db 084h, 06Ah, 002h, 000h, 000h, 03Dh, 0FFh, 0BFh, 000h, 000h, 00Fh, 087h, 05Fh, 002h, 000h, 000h
+db 03Dh, 000h, 008h, 000h, 000h, 076h, 009h, 038h, 053h, 003h, 00Fh, 085h, 04Fh, 002h, 000h, 000h
+db 08Bh, 04Ch, 024h, 010h, 066h, 08Bh, 013h, 066h, 03Bh, 055h, 000h, 00Fh, 085h, 03Eh, 002h, 000h
+db 000h, 08Ah, 045h, 002h, 038h, 043h, 002h, 00Fh, 085h, 032h, 002h, 000h, 000h, 08Bh, 054h, 024h
+db 014h, 08Bh, 0C5h, 02Bh, 0C2h, 089h, 02Fh, 00Fh, 084h, 098h, 000h, 000h, 000h, 083h, 0F8h, 003h
+db 089h, 044h, 024h, 024h, 077h, 005h, 008h, 046h, 0FEh, 0EBh, 075h, 083h, 0F8h, 012h, 077h, 007h
+db 08Ah, 0D0h, 080h, 0EAh, 003h, 0EBh, 066h, 08Dh, 050h, 0EEh, 0C6h, 006h, 000h, 046h, 081h, 0FAh
+db 0FFh, 000h, 000h, 000h, 089h, 054h, 024h, 018h, 076h, 04Fh, 08Bh, 0C2h, 08Dh, 088h, 000h, 0FFh
+db 0FFh, 0FFh, 0B8h, 081h, 080h, 080h, 080h, 0F7h, 0E1h, 08Bh, 0CAh, 0C1h, 0E9h, 007h, 041h, 089h
+db 04Ch, 024h, 020h, 08Bh, 0D1h, 0C1h, 0E9h, 002h, 033h, 0C0h, 08Bh, 0FEh, 0F3h, 0ABh, 08Bh, 0CAh
+db 083h, 0E1h, 003h, 0F3h, 0AAh, 08Bh, 0C2h, 003h, 0F0h, 08Dh, 0A4h, 024h, 000h, 000h, 000h, 000h
+db 08Bh, 054h, 024h, 018h, 081h, 0EAh, 0FFh, 000h, 000h, 000h, 048h, 089h, 054h, 024h, 018h, 075h
+db 0EFh, 08Bh, 044h, 024h, 024h, 08Bh, 04Ch, 024h, 010h, 08Ah, 054h, 024h, 018h, 088h, 016h, 046h
+db 08Bh, 054h, 024h, 014h, 08Ah, 012h, 08Bh, 07Ch, 024h, 014h, 088h, 016h, 046h, 047h, 048h, 089h
+db 07Ch, 024h, 014h, 075h, 0EBh, 08Ah, 045h, 003h, 08Ah, 053h, 003h, 083h, 0C5h, 003h, 045h, 03Ah
+db 0D0h, 00Fh, 085h, 00Dh, 001h, 000h, 000h, 08Ah, 055h, 000h, 08Ah, 043h, 004h, 045h, 03Ah, 0C2h
+db 00Fh, 085h, 0FEh, 000h, 000h, 000h, 08Ah, 045h, 000h, 08Ah, 053h, 005h, 045h, 03Ah, 0D0h, 00Fh
+db 085h, 0EFh, 000h, 000h, 000h, 08Ah, 055h, 000h, 08Ah, 043h, 006h, 045h, 03Ah, 0C2h, 00Fh, 085h
+db 0E0h, 000h, 000h, 000h, 08Ah, 045h, 000h, 08Ah, 053h, 007h, 045h, 03Ah, 0D0h, 00Fh, 085h, 0D1h
+db 000h, 000h, 000h, 08Ah, 055h, 000h, 08Ah, 043h, 008h, 045h, 03Ah, 0C2h, 00Fh, 085h, 0C2h, 000h
+db 000h, 000h, 08Bh, 044h, 024h, 01Ch, 083h, 0C3h, 009h, 03Bh, 0E8h, 073h, 010h, 08Dh, 049h, 000h
+db 08Ah, 00Bh, 03Ah, 04Dh, 000h, 075h, 006h, 043h, 045h, 03Bh, 0E8h, 072h, 0F3h, 08Bh, 054h, 024h
+db 014h, 08Bh, 044h, 024h, 010h, 08Bh, 0DDh, 02Bh, 0DAh, 03Dh, 000h, 040h, 000h, 000h, 077h, 021h
+db 048h, 083h, 0FBh, 021h, 089h, 044h, 024h, 010h, 077h, 00Fh, 080h, 0EBh, 002h, 080h, 0CBh, 020h
+db 088h, 01Eh, 08Bh, 0C8h, 0E9h, 0D1h, 000h, 000h, 000h, 083h, 0EBh, 021h, 0C6h, 006h, 020h, 0EBh
+db 02Ch, 02Dh, 000h, 040h, 000h, 000h, 089h, 044h, 024h, 010h, 0C1h, 0E8h, 00Bh, 024h, 008h, 083h
+db 0FBh, 009h, 077h, 012h, 08Bh, 04Ch, 024h, 010h, 080h, 0EBh, 002h, 00Ah, 0C3h, 00Ch, 010h, 088h
+db 006h, 0E9h, 0A4h, 000h, 000h, 000h, 083h, 0EBh, 009h, 00Ch, 010h, 088h, 006h, 046h, 081h, 0FBh
+db 0FFh, 000h, 000h, 000h, 076h, 036h, 08Dh, 093h, 000h, 0FFh, 0FFh, 0FFh, 0B8h, 081h, 080h, 080h
+db 080h, 0F7h, 0E2h, 08Bh, 0CAh, 0C1h, 0E9h, 007h, 041h, 089h, 04Ch, 024h, 024h, 08Bh, 0D1h, 0C1h
+db 0E9h, 002h, 033h, 0C0h, 08Bh, 0FEh, 0F3h, 0ABh, 08Bh, 0CAh, 083h, 0E1h, 003h, 0F3h, 0AAh, 08Bh
+db 0C2h, 003h, 0F0h, 081h, 0EBh, 0FFh, 000h, 000h, 000h, 048h, 075h, 0F7h, 08Bh, 04Ch, 024h, 010h
+db 088h, 01Eh, 0EBh, 056h, 08Bh, 07Ch, 024h, 014h, 04Dh, 08Bh, 0C5h, 02Bh, 0C7h, 081h, 0F9h, 000h
+db 008h, 000h, 000h, 077h, 01Fh, 049h, 0FEh, 0C8h, 0C0h, 0E0h, 003h, 08Ah, 0D1h, 080h, 0E2h, 007h
+db 00Ah, 0C2h, 0C0h, 0E0h, 002h, 0C1h, 0E9h, 003h, 088h, 006h, 046h, 088h, 00Eh, 046h, 089h, 06Ch
+db 024h, 014h, 0EBh, 03Eh, 02Ch, 002h, 081h, 0F9h, 000h, 040h, 000h, 000h, 077h, 007h, 049h, 00Ch
+db 020h, 088h, 006h, 0EBh, 015h, 081h, 0E9h, 000h, 040h, 000h, 000h, 08Bh, 0D1h, 0C1h, 0EAh, 00Bh
+db 080h, 0E2h, 008h, 00Ah, 0D0h, 080h, 0CAh, 010h, 088h, 016h, 08Ah, 0C1h, 046h, 0C0h, 0E0h, 002h
+db 0C1h, 0E9h, 006h, 088h, 006h, 046h, 088h, 00Eh, 046h, 089h, 06Ch, 024h, 014h, 0EBh, 003h, 089h
+db 02Fh, 045h, 08Bh, 044h, 024h, 01Ch, 083h, 0C0h, 0F3h, 03Bh, 0E8h, 00Fh, 082h, 0EFh, 0FCh, 0FFh
+db 0FFh, 08Bh, 054h, 024h, 030h, 08Bh, 04Ch, 024h, 034h, 08Bh, 044h, 024h, 01Ch, 02Bh, 0F2h, 05Fh
+db 089h, 031h, 08Bh, 04Ch, 024h, 010h, 05Eh, 05Dh, 02Bh, 0C1h, 05Bh, 083h, 0C4h, 018h, 0C3h
+
+ret
+call_compress_new00 endp
+
+;--------------------------------------------------------------------------------
+
+End DllEntry[/CODE]
+
+uncompress.inc
+
+[code]include windows.inc
+include user32.inc
+include kernel32.inc
+include gdi32.inc
+include msvcrt.inc
+
+includelib user32.lib
+includelib kernel32.lib
+includelib gdi32.lib
+includelib msvcrt.lib
+
+include masm32.inc
+includelib masm32.lib
+
+call_uncompress_ret8 PROTO
+call_uncompress PROTO :DWORD, :DWORD, :DWORD
+function_compress PROTO
+function_two PROTO
+uncompress PROTO :DWORD, :DWORD, :DWORD, :DWORD, :DWORD
+function_test PROTO :DWORD, :DWORD, :DWORD, :DWORD, :DWORD
+function_encrypt PROTO
+call_encrypt PROTO :DWORD, :DWORD
+
+call_compress_new PROTO
+call_compress_new00 PROTO
+
+.data?
+
+hInstance dd ? [/CODE]
+
+uncompress.def
+
+[code]LIBRARY uncompress.dll
+EXPORTS
+call_uncompress
+call_encrypt
+function_compress
+call_compress_ret8 [/CODE]
+
+para usar no C\C++
+
+[code]typedef void (__stdcall *uncompress_packet)(unsigned char* local_uncompress, int size_uncompress, unsigned char* recv_packet);
+
+int FCompressPacket(unsigned char *packet_decrypt, unsigned char *packet_encrypt, int size_packet);
+
+uncompress_packet UnCompressPacket;
+FCompressPacket CompressPacket;
+
+void init_dll()
+{
+HINSTANCE HLibrary = LoadLibrary("functions.dll");
+
+if(HLibrary == NULL)
+{
+printf("functions.dll inexistente\n");
+getch();
+exit(1);
+}
+
+CompressPacket = (compress_packet)GetProcAddress(HLibrary, "call_compress_ret8");
+UnCompressPacket = (uncompress_packet)GetProcAddress(uncompressDLL, "call_uncompress");
+}[/CODE]
+
+e para usar ...
+[code]CompressPacket((unsigned char*)packet_decrypt, size_packet, packet_encrypt-4, erase, erase);
+
+packet_decrypt -> packet decryptado para compress
+size_packet -> tamanho do packet
+packet_compress-4 -> importante tem que ser -4
+erase -> um buffer com aproximadamente 1024*50 (51200) bytes.
+
+
+UnCompressPacket((unsigned char*)buffer_tmp, bytes_recv, packet_decrypt+4);
+
+buffer_tmp -> buffer onde vai ser decompress.
+bytes_recv -> buffer recebido jรก decryptado.
+packet_decrypt+4 -> subtrai 4 ao tamanho do buffer total.
+Source + DLL[/CODE]
+
+[url="http://www.sendspace.com/file/6yl0uj"]SendSpace[/URL]
+[url="http://www.multiupload.nl/KEL8GE7TKY"]MultiClient[/URL]
+
+by Firefox
